@@ -1,5 +1,6 @@
 package ir.amsjavan.client
 
+import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
 import io.aeron.Aeron
@@ -19,17 +20,20 @@ object ClientAeron {
 
   val idleStrategy = new BackoffIdleStrategy(
     100, 10, TimeUnit.MICROSECONDS.toNanos(1), TimeUnit.MICROSECONDS.toNanos(100))
-  val fh = new FragmentHandler {
+  val handler = new FragmentHandler {
     override def onFragment(buffer: DirectBuffer, offset: Int, length: Int, header: Header): Unit = {
       val data = Array.ofDim[Byte](length)
       buffer.getBytes(offset, data)
 
-      println(s"message to stream ${header.streamId()} from session ${header.sessionId()} ($length $offset) <<${String.valueOf(data)}>>")
+        new String(data) match {
+        case "exit" => System.exit(0)
+        case output => println(s"message to stream ${header.streamId()} from session ${header.sessionId()} ($length $offset) <<${output}>>")
+      }
     }
   }
   def run: Unit = {
     while (true) {
-      val fragmentsRead = subscription.poll(fh, 10)
+      val fragmentsRead = subscription.poll(handler, 10)
       idleStrategy.idle(fragmentsRead)
     }
   }
