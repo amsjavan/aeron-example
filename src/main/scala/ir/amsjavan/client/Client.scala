@@ -13,6 +13,8 @@ object Client extends App {
 }
 
 object ClientAeron {
+  println("Initializing Client")
+
   val aeron = Aeron.connect(new Aeron.Context())
   val subscription = aeron.addSubscription("aeron:udp?endpoint=localhost:40123", 10)
 
@@ -29,9 +31,33 @@ object ClientAeron {
       }
     }
   }
+
+  var counter = 0
+  var start: Long = 0
+  class TestHandler(iteration: Int) extends FragmentHandler {
+    override def onFragment(buffer: DirectBuffer, offset: Int, length: Int, header: Header): Unit = {
+      val data = Array.ofDim[Byte](length)
+      buffer.getBytes(offset, data)
+      counter += 1
+
+      if (counter == 1) {
+        start = System.currentTimeMillis()
+      }
+      if (counter == iteration) {
+        println(s"$counter messages processed in ${System.currentTimeMillis() - start} ms")
+      }
+    }
+  }
   def run: Unit = {
     while (true) {
       val fragmentsRead = subscription.poll(handler, 10)
+      idleStrategy.idle(fragmentsRead)
+    }
+  }
+
+  def test(iteration: Int): Unit = {
+    while (counter < iteration) {
+      val fragmentsRead = subscription.poll(new TestHandler(iteration), 10)
       idleStrategy.idle(fragmentsRead)
     }
   }
