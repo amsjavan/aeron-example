@@ -4,15 +4,13 @@ import java.nio.ByteBuffer
 import java.util.concurrent.TimeUnit
 
 import io.aeron.Aeron
-import io.aeron.logbuffer.{FragmentHandler, Header}
+import io.aeron.logbuffer.{ FragmentHandler, Header }
 import org.agrona.DirectBuffer
 import org.agrona.concurrent.BackoffIdleStrategy
 
-
-object Client  extends App{
+object Client extends App {
   ClientAeron.run
 }
-
 
 object ClientAeron {
   val aeron = Aeron.connect(new Aeron.Context())
@@ -25,7 +23,7 @@ object ClientAeron {
       val data = Array.ofDim[Byte](length)
       buffer.getBytes(offset, data)
 
-        new String(data) match {
+      new String(data) match {
         case "exit" => System.exit(0)
         case output => println(s"message to stream ${header.streamId()} from session ${header.sessionId()} ($length $offset) <<${output}>>")
       }

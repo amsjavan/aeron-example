@@ -6,30 +6,28 @@ import io.aeron.Aeron
 import io.aeron.driver.MediaDriver
 import org.agrona.concurrent.UnsafeBuffer
 
-
-object Server extends App{
+object Server extends App {
 
   AeronServer.run
 
 }
 
 object AeronServer {
-    val driver = MediaDriver.launch()
-    val aeron = Aeron.connect(new Aeron.Context())
+  val driver = MediaDriver.launch()
+  val aeron = Aeron.connect(new Aeron.Context())
   val publication = aeron.addPublication("aeron:udp?endpoint=localhost:40123", 10)
   var BUFFER = new UnsafeBuffer(ByteBuffer.allocateDirect(256))
-  def run: Unit ={
+  def run: Unit = {
 
+    while (true) {
+      val message = scala.io.StdIn.readLine()
 
-    while (true){
-    val message = scala.io.StdIn.readLine()
+      println(message)
+      BUFFER.putBytes(0, message.getBytes())
 
-    println(message)
-    BUFFER.putBytes(0, message.getBytes())
-
-   val resultingPosition = publication.offer(BUFFER, 0, message.getBytes().length)
-    println(resultingPosition)
-  }
-
+      val resultingPosition = publication.offer(BUFFER, 0, message.getBytes().length)
+      println(resultingPosition)
     }
+
+  }
 }
